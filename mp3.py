@@ -8,6 +8,7 @@ import eyed3
 from ui import Ui_MainWindow
 from PyQt5.QtWinExtras import QtWin
 import os
+from mutagen.mp3 import MP3
 
 
 class ConfirmDialog(QDialog):
@@ -59,6 +60,7 @@ class Song:
         self.__title = audio.tag.title
         self.__recording_date = audio.tag.recording_date
         self.__artist = audio.tag.artist
+        self.__length = MP3(path).info.length
         images = audio.tag.images
         if not images:
             with open('images/cover_image.png', 'rb') as f:
@@ -67,6 +69,10 @@ class Song:
         else:
             self.__image = images[0].image_data
             self.have_image = True
+
+    @property
+    def length(self):
+        return self.__length
 
     @property
     def date(self):
@@ -197,9 +203,47 @@ class Mp3(QMainWindow, Ui_MainWindow):
             self.play_button.setIcon(QtGui.QIcon('images/pause_button.png'))
             self.play_button.setIconSize(QtCore.QSize(100, 100))
         else:
+            self.media_player.pause()
             self.music_is_playing = False
             self.play_button.setIcon(QtGui.QIcon('images/play_button.png'))
             self.play_button.setIconSize(QtCore.QSize(100, 100))
+            return
+        selected_lol = self.list_of_liked.selectedItems()
+        selected_los = self.list_of_songs.selectedItems()
+        if not selected_los and not selected_lol:
+            if not self.list_of_mp3 and not self.list_of_liked_mp3:
+                self.music_is_playing = False
+                self.play_button.setIcon(QtGui.QIcon('images/play_button.png'))
+                self.play_button.setIconSize(QtCore.QSize(100, 100))
+                return
+            elif self.list_of_mp3:
+                self.list_of_songs.setCurrentRow(0)
+                item = self.list_of_songs.currentItem()
+                song: Song = self.list_of_mp3[item.text()]
+            else:
+                self.list_of_liked.setCurrentRow(0)
+                item = self.list_of_liked.currentItem()
+                song: Song = self.list_of_liked_mp3[item.text()]
+        elif selected_los:
+            item = self.list_of_songs.currentItem()
+            song: Song = self.list_of_mp3[item.text()]
+        else:
+            item = self.list_of_liked.currentItem()
+            song: Song = self.list_of_liked_mp3[item.text()]
+
+        content = QtMultimedia.QMediaContent(QtCore.QUrl.fromLocalFile(str(song)))
+        self.media_player = QtMultimedia.QMediaPlayer()
+        self.media_player.setMedia(content)
+        self.media_player.play()
+
+        self.media_player.positionChanged.connect(self.mediaplayer_pos_changed)
+        self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
+
+    def mediaplayer_duration_changed(self, dur):
+        self.song_slider.setMaximum(dur)
+
+    def mediaplayer_pos_changed(self, pos):
+        self.song_slider.setValue(pos)
 
     def load(self):
         dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
@@ -218,8 +262,8 @@ class Mp3(QMainWindow, Ui_MainWindow):
     def previous_song(self):
         ...
 
-    def slider(self):
-        ...
+    def slider(self, pos):
+        self.media_player.setPosition(pos)
 
     def list_of_liked_click(self):
         self.list_of_songs.clearSelection()
@@ -242,6 +286,10 @@ class Mp3(QMainWindow, Ui_MainWindow):
                                             "<html><head/><body><p align=\"center\"><span"
                                             " style=\" font-size:12pt; color:#d6d6d6;\">"
                                             f"{current_song.artist}</span></p></body></html>"))
+        length = current_song.length
+        m = int(length // 60)
+        s = int(length % 60)
+        self.length.setText(f"{m:0>2}:{s:0>2}")
         if current_song.date is None:
             text = "Дата выпуска неизвестна"
         else:
@@ -281,6 +329,10 @@ class Mp3(QMainWindow, Ui_MainWindow):
                                             "<html><head/><body><p align=\"center\"><span"
                                             " style=\" font-size:12pt; color:#d6d6d6;\">"
                                             f"{current_song.artist}</span></p></body></html>"))
+        length = current_song.length
+        m = int(length // 60)
+        s = int(length % 60)
+        self.length.setText(f"{m:0>2}:{s:0>2}")
         if current_song.date is None:
             text = "Дата выпуска неизвестна"
         else:

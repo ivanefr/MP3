@@ -43,7 +43,7 @@
     <property name="geometry">
      <rect>
       <x>130</x>
-      <y>600</y>
+      <y>595</y>
       <width>1061</width>
       <height>22</height>
      </rect>
@@ -73,9 +73,9 @@
    <widget class="QLabel" name="current_time">
     <property name="geometry">
      <rect>
-      <x>40</x>
+      <x>80</x>
       <y>590</y>
-      <width>61</width>
+      <width>41</width>
       <height>31</height>
      </rect>
     </property>
@@ -212,12 +212,12 @@ border-radius: 30px;</string>
      <string>ЗАГРУЗИТЬ</string>
     </property>
    </widget>
-   <widget class="QLabel" name="current_time_2">
+   <widget class="QLabel" name="length">
     <property name="geometry">
      <rect>
-      <x>1220</x>
+      <x>1202</x>
       <y>590</y>
-      <width>61</width>
+      <width>41</width>
       <height>31</height>
      </rect>
     </property>
