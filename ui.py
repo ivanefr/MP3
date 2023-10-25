@@ -15,7 +15,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setEnabled(True)
-        MainWindow.resize(1321, 849)
+        MainWindow.resize(1321, 839)
         MainWindow.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         MainWindow.setStyleSheet("background-color: #2F2F2F;")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -63,24 +63,24 @@ class Ui_MainWindow(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.name = QtWidgets.QLabel(self.verticalLayoutWidget)
         self.name.setStyleSheet("border-style: solid;\n"
-"border-width: 1px;\n"
-"border-color: rgb(252, 252, 252);")
+                                "border-width: 1px;\n"
+                                "border-color: rgb(252, 252, 252);")
         self.name.setObjectName("name")
         self.verticalLayout.addWidget(self.name)
         self.artist = QtWidgets.QLabel(self.verticalLayoutWidget)
         self.artist.setStyleSheet("border-style: solid;\n"
-"border-width: 1px;\n"
-"border-color: rgb(252, 252, 252);")
+                                  "border-width: 1px;\n"
+                                  "border-color: rgb(252, 252, 252);")
         self.artist.setObjectName("artist")
         self.verticalLayout.addWidget(self.artist)
         self.date = QtWidgets.QLabel(self.verticalLayoutWidget)
         self.date.setStyleSheet("border-style: solid;\n"
-"border-width: 1px;\n"
-"border-color: rgb(252, 252, 252);")
+                                "border-width: 1px;\n"
+                                "border-color: rgb(252, 252, 252);")
         self.date.setObjectName("date")
         self.verticalLayout.addWidget(self.date)
         self.load_button = QtWidgets.QPushButton(self.centralwidget)
-        self.load_button.setGeometry(QtCore.QRect(1020, 140, 191, 101))
+        self.load_button.setGeometry(QtCore.QRect(1005, 140, 191, 101))
         font = QtGui.QFont()
         font.setFamily("Times New Roman")
         font.setPointSize(18)
@@ -92,7 +92,8 @@ class Ui_MainWindow(object):
         self.load_button.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.load_button.setAutoFillBackground(False)
         self.load_button.setStyleSheet("background-color: rgb(76, 76, 77);\n"
-"color: rgb(214, 214, 214);")
+                                       "color: rgb(214, 214, 214);\n"
+                                       "border-radius: 30px;")
         self.load_button.setObjectName("load_button")
         self.current_time_2 = QtWidgets.QLabel(self.centralwidget)
         self.current_time_2.setGeometry(QtCore.QRect(1220, 590, 61, 31))
@@ -103,13 +104,13 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         self.current_time_2.setFont(font)
         self.current_time_2.setObjectName("current_time_2")
-        self.listWidget = QtWidgets.QListWidget(self.centralwidget)
-        self.listWidget.setGeometry(QtCore.QRect(30, 340, 331, 211))
-        self.listWidget.setStyleSheet("border-style: solid;\n"
-"border-width: 1px;\n"
-"border-color: rgb(252, 252, 252)\n"
-"")
-        self.listWidget.setObjectName("listWidget")
+        self.list_of_liked = QtWidgets.QListWidget(self.centralwidget)
+        self.list_of_liked.setGeometry(QtCore.QRect(30, 340, 331, 211))
+        self.list_of_liked.setStyleSheet("border-style: solid;\n"
+                                         "border-width: 1px;\n"
+                                         "border-color: rgb(252, 252, 252)\n"
+                                         "")
+        self.list_of_liked.setObjectName("list_of_liked")
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(40, 290, 311, 41))
         self.label.setStyleSheet("background-color: rgb(76, 76, 77);")
@@ -136,9 +137,13 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.current_time.setText(_translate("MainWindow", "00.00"))
-        self.name.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Название</span></p></body></html>"))
-        self.artist.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Исполнитель</span></p></body></html>"))
-        self.date.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Год выпуска</span></p></body></html>"))
+        self.name.setText(_translate("MainWindow",
+                                     "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Название</span></p></body></html>"))
+        self.artist.setText(_translate("MainWindow",
+                                       "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Исполнитель</span></p></body></html>"))
+        self.date.setText(_translate("MainWindow",
+                                     "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Год выпуска</span></p></body></html>"))
         self.load_button.setText(_translate("MainWindow", "ЗАГРУЗИТЬ"))
         self.current_time_2.setText(_translate("MainWindow", "00.00"))
-        self.label.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:14pt; color:#d6d6d6;\">История прослушивания</span></p></body></html>"))
+        self.label.setText(_translate("MainWindow",
+                                      "<html><head/><body><p align=\"center\"><span style=\" font-size:14pt; color:#d6d6d6;\">&quot;Мне нравится&quot;</span></p></body></html>"))

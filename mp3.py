@@ -1,12 +1,55 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QPushButton, \
     QMainWindow, QFileDialog, QListWidgetItem, QBoxLayout, \
-    QCheckBox, QLabel
+    QCheckBox, QLabel, QListWidget, QDialog, QDialogButtonBox, \
+    QVBoxLayout
 from PyQt5 import QtGui, QtCore, QtMultimedia
 import eyed3
 from ui import Ui_MainWindow
 from PyQt5.QtWinExtras import QtWin
 import os
+
+
+class ConfirmDialog(QDialog):
+    def __init__(self, append=True, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Подтверждение")
+
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+        self.layout = QVBoxLayout()
+        if append:
+            text = "Добавить песню в \"Мне нравится\"?"
+        else:
+            text = "Удалить песню из \"Мне нравится\"?"
+        label = QLabel(text)
+        label.setWordWrap(True)
+        self.layout.addWidget(label)
+        self.layout.addWidget(self.button_box)
+        self.setLayout(self.layout)
+        self.setFixedSize(250, 150)
+        cancel_button = self.button_box.button(QDialogButtonBox.Cancel)
+        cancel_button.setText("Отмена")
+
+        self.setStyleSheet("""
+        QDialog {
+            background-color: #2F2F2F;
+        }
+        QLabel {
+            color: rgb(214, 214, 214);
+            font-size: 20px;
+        } 
+        QPushButton {
+            color: green;
+            font-weight: bold;
+        }
+        QPushButton[text="Cancel"] {
+            color: red;
+        }
+        """)
 
 
 class Song:
@@ -111,22 +154,39 @@ class Mp3(QMainWindow, Ui_MainWindow):
 
         self.previous_song_button.clicked.connect(self.previous_song)
 
-        self.list_of_songs.setStyleSheet("""
+        stylesheet_list_widget = """
             QListWidget::item {color: rgb(214, 214, 214);
-                               font-size: 30px;
-                               border-style: solid;
-                                border-width: 1px;
-                                border-color: rgb(252, 252, 252);}
+                                border-width: 2px;
+                                border-color: rgb(252, 252, 252);
+                                margin-bottom: 5px
+                                }
             QListWidget::item:selected {
-                                        border-color: red;
+                                        border: solid;
+                                        border-color: white;
+                                        border-width: 3px;                               
                                         }
             QListWidget {border-style: solid;
                          border-width: 1px;
-                         border-color: rgb(252, 252, 252);}
+                         border-color: rgb(252, 252, 252);
+                         font-size: 20px}
                                 
-        """)
+        """
+
+        self.list_of_songs.setStyleSheet(stylesheet_list_widget)
+        self.list_of_liked.setStyleSheet(stylesheet_list_widget)
+
         self.list_of_mp3 = {}
+        self.list_of_liked_mp3 = {}
+        self.liked_to_del = {}
+
         self.list_of_songs.itemClicked.connect(self.list_of_songs_click)
+        self.list_of_songs.itemDoubleClicked.connect(self.list_of_songs_double_click)
+
+        self.list_of_liked.itemClicked.connect(self.list_of_liked_click)
+        self.list_of_liked.itemDoubleClicked.connect(self.list_of_liked_double_click)
+
+        self.list_of_songs.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        self.list_of_liked.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
 
         self.setWindowIcon(QtGui.QIcon('images/icon.jpg'))
         pass
@@ -161,7 +221,47 @@ class Mp3(QMainWindow, Ui_MainWindow):
     def slider(self):
         ...
 
+    def list_of_liked_click(self):
+        self.list_of_songs.clearSelection()
+        item = self.list_of_liked.currentItem()
+        current_song: Song = self.list_of_liked_mp3[item.text()]
+        if current_song.have_image:
+            try:
+                with open("images/cover.png", mode='wb') as f:
+                    f.write(current_song.byte_image)
+                self.cover.setPixmap(QtGui.QPixmap("images/cover.png"))
+                os.remove("images/cover.png")
+            finally:
+                if os.path.exists("images/cover.png"):
+                    os.remove("images/cover.png")
+        self.name.setText(self._translate("MainWindow",
+                                          "<html><head/><body><p align=\"center\"><span"
+                                          " style=\" font-size:12pt; color:#d6d6d6;\">"
+                                          f"{current_song.name}</span></p></body></html>"))
+        self.artist.setText(self._translate("MainWindow",
+                                            "<html><head/><body><p align=\"center\"><span"
+                                            " style=\" font-size:12pt; color:#d6d6d6;\">"
+                                            f"{current_song.artist}</span></p></body></html>"))
+        if current_song.date is None:
+            text = "Дата выпуска неизвестна"
+        else:
+            text = current_song.date
+        self.date.setText(self._translate("MainWindow",
+                                          "<html><head/><body><p align=\"center\"><span"
+                                          " style=\" font-size:12pt; color:#d6d6d6;\">"
+                                          f"{text}</span></p></body></html>"))
+
+    def list_of_liked_double_click(self):
+        item = self.list_of_liked.currentItem()
+        current_song: Song = self.list_of_liked_mp3[item.text()]
+        dialog = ConfirmDialog(append=False)
+        if dialog.exec():
+            self.liked_to_del[current_song.title].setHidden(True)
+            del self.list_of_liked_mp3[current_song.title]
+            del self.liked_to_del[current_song.title]
+
     def list_of_songs_click(self):
+        self.list_of_liked.clearSelection()
         item = self.list_of_songs.currentItem()
         current_song: Song = self.list_of_mp3[item.text()]
         if current_song.have_image:
@@ -176,15 +276,36 @@ class Mp3(QMainWindow, Ui_MainWindow):
         self.name.setText(self._translate("MainWindow",
                                           "<html><head/><body><p align=\"center\"><span"
                                           " style=\" font-size:12pt; color:#d6d6d6;\">"
-                                          f"Название: {current_song.name}</span></p></body></html>"))
+                                          f"{current_song.name}</span></p></body></html>"))
         self.artist.setText(self._translate("MainWindow",
                                             "<html><head/><body><p align=\"center\"><span"
                                             " style=\" font-size:12pt; color:#d6d6d6;\">"
-                                            f"Исполнитель: {current_song.artist}</span></p></body></html>"))
+                                            f"{current_song.artist}</span></p></body></html>"))
+        if current_song.date is None:
+            text = "Дата выпуска неизвестна"
+        else:
+            text = current_song.date
         self.date.setText(self._translate("MainWindow",
                                           "<html><head/><body><p align=\"center\"><span"
                                           " style=\" font-size:12pt; color:#d6d6d6;\">"
-                                          f"Год выпуска: {current_song.date}</span></p></body></html>"))
+                                          f"{text}</span></p></body></html>"))
+
+    def list_of_songs_double_click(self):
+        item = self.list_of_songs.currentItem()
+        current_song: Song = self.list_of_mp3[item.text()]
+        if current_song.title not in self.list_of_liked_mp3:
+            dialog = ConfirmDialog()
+            if dialog.exec():
+                self.list_of_liked_mp3.update({current_song.title: current_song})
+                new_item = QListWidgetItem(current_song.title)
+                self.list_of_liked.insertItem(0, new_item)
+                self.liked_to_del.update({current_song.title: new_item})
+        else:
+            dialog = ConfirmDialog(append=False)
+            if dialog.exec():
+                self.liked_to_del[current_song.title].setHidden(True)
+                del self.list_of_liked_mp3[current_song.title]
+                del self.liked_to_del[current_song.title]
 
 
 def except_hook(cls, exception, traceback):

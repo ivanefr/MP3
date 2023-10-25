@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1321</width>
-    <height>849</height>
+    <height>839</height>
    </rect>
   </property>
   <property name="cursor">
@@ -177,7 +177,7 @@ border-color: rgb(252, 252, 252);</string>
    <widget class="QPushButton" name="load_button">
     <property name="geometry">
      <rect>
-      <x>1020</x>
+      <x>1005</x>
       <y>140</y>
       <width>191</width>
       <height>101</height>
@@ -205,7 +205,8 @@ border-color: rgb(252, 252, 252);</string>
     </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(76, 76, 77);
-color: rgb(214, 214, 214);</string>
+color: rgb(214, 214, 214);
+border-radius: 30px;</string>
     </property>
     <property name="text">
      <string>ЗАГРУЗИТЬ</string>
@@ -232,7 +233,7 @@ color: rgb(214, 214, 214);</string>
      <string>00.00</string>
     </property>
    </widget>
-   <widget class="QListWidget" name="listWidget">
+   <widget class="QListWidget" name="list_of_liked">
     <property name="geometry">
      <rect>
       <x>30</x>
@@ -261,7 +262,7 @@ border-color: rgb(252, 252, 252)
      <string notr="true">background-color: rgb(76, 76, 77);</string>
     </property>
     <property name="text">
-     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt; color:#d6d6d6;&quot;&gt;История прослушивания&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt; color:#d6d6d6;&quot;&gt;&amp;quot;Мне нравится&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
    </widget>
    <widget class="QPushButton" name="previous_song_button">
