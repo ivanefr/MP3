@@ -195,7 +195,7 @@ class Mp3(QMainWindow, Ui_MainWindow):
         self.list_of_liked.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
 
         self.setWindowIcon(QtGui.QIcon('images/icon.jpg'))
-        pass
+        self.player = False
 
     def play(self):
         if not self.music_is_playing:
@@ -224,26 +224,47 @@ class Mp3(QMainWindow, Ui_MainWindow):
                 self.list_of_liked.setCurrentRow(0)
                 item = self.list_of_liked.currentItem()
                 song: Song = self.list_of_liked_mp3[item.text()]
+            if song.have_image:
+                try:
+                    with open("images/cover.png", mode='wb') as f:
+                        f.write(song.byte_image)
+                    self.cover.setPixmap(QtGui.QPixmap("images/cover.png"))
+                    os.remove("images/cover.png")
+                finally:
+                    if os.path.exists("images/cover.png"):
+                        os.remove("images/cover.png")
         elif selected_los:
             item = self.list_of_songs.currentItem()
             song: Song = self.list_of_mp3[item.text()]
         else:
             item = self.list_of_liked.currentItem()
             song: Song = self.list_of_liked_mp3[item.text()]
+        if not self.player:
+            content = QtMultimedia.QMediaContent(QtCore.QUrl.fromLocalFile(str(song)))
+            self.media_player = QtMultimedia.QMediaPlayer()
+            self.media_player.setMedia(content)
+            self.media_player.play()
+            self.player = True
 
-        content = QtMultimedia.QMediaContent(QtCore.QUrl.fromLocalFile(str(song)))
-        self.media_player = QtMultimedia.QMediaPlayer()
-        self.media_player.setMedia(content)
-        self.media_player.play()
+            self.media_player.positionChanged.connect(self.mediaplayer_pos_changed)
+            self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
+            self.media_player.mediaStatusChanged.connect(self.mediaplayer_status_changed)
+        else:
+            self.media_player.play()
 
-        self.media_player.positionChanged.connect(self.mediaplayer_pos_changed)
-        self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
+    def mediaplayer_status_changed(self):
+        if self.media_player.state() == QtMultimedia.QMediaPlayer.State.StoppedState:
+            self.next_song()
 
     def mediaplayer_duration_changed(self, dur):
         self.song_slider.setMaximum(dur)
 
     def mediaplayer_pos_changed(self, pos):
         self.song_slider.setValue(pos)
+        sec = pos // 1000
+        m = sec // 60
+        s = sec % 60
+        self.current_time.setText(f"{m:0>2}:{s:0>2}")
 
     def load(self):
         dirlist = QFileDialog.getExistingDirectory(self, "Выбрать папку", ".")
@@ -264,6 +285,10 @@ class Mp3(QMainWindow, Ui_MainWindow):
 
     def slider(self, pos):
         self.media_player.setPosition(pos)
+        sec = pos // 1000
+        m = sec // 60
+        s = sec % 60
+        self.current_time.setText(f"{m:0>2}:{s:0>2}")
 
     def list_of_liked_click(self):
         self.list_of_songs.clearSelection()
@@ -298,6 +323,21 @@ class Mp3(QMainWindow, Ui_MainWindow):
                                           "<html><head/><body><p align=\"center\"><span"
                                           " style=\" font-size:12pt; color:#d6d6d6;\">"
                                           f"{text}</span></p></body></html>"))
+
+        content = QtMultimedia.QMediaContent(QtCore.QUrl.fromLocalFile(str(current_song)))
+        self.media_player = QtMultimedia.QMediaPlayer()
+        self.media_player.setMedia(content)
+
+        if not self.music_is_playing:
+            self.media_player.pause()
+        else:
+            self.media_player.play()
+            self.play_button.setIcon(QtGui.QIcon('images/pause_button.png'))
+            self.play_button.setIconSize(QtCore.QSize(100, 100))
+        self.player = True
+
+        self.media_player.positionChanged.connect(self.mediaplayer_pos_changed)
+        self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
 
     def list_of_liked_double_click(self):
         item = self.list_of_liked.currentItem()
@@ -341,6 +381,20 @@ class Mp3(QMainWindow, Ui_MainWindow):
                                           "<html><head/><body><p align=\"center\"><span"
                                           " style=\" font-size:12pt; color:#d6d6d6;\">"
                                           f"{text}</span></p></body></html>"))
+
+        content = QtMultimedia.QMediaContent(QtCore.QUrl.fromLocalFile(str(current_song)))
+        self.media_player = QtMultimedia.QMediaPlayer()
+        self.media_player.setMedia(content)
+        if not self.music_is_playing:
+            self.media_player.pause()
+        else:
+            self.media_player.play()
+            self.play_button.setIcon(QtGui.QIcon('images/pause_button.png'))
+            self.play_button.setIconSize(QtCore.QSize(100, 100))
+        self.player = True
+
+        self.media_player.positionChanged.connect(self.mediaplayer_pos_changed)
+        self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
 
     def list_of_songs_double_click(self):
         item = self.list_of_songs.currentItem()
