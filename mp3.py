@@ -334,53 +334,7 @@ class Mp3(QMainWindow, Ui_MainWindow):
         self.list_of_songs.clearSelection()
         item = self.list_of_liked.currentItem()
         current_song: Song = self.list_of_liked_mp3[item.text()]
-        self.count_of_listening_song(current_song)
-        self.last_listening = current_song
-        try:
-            with open("images/cover.png", mode='wb') as f:
-                f.write(current_song.byte_image)
-            self.cover.setPixmap(QtGui.QPixmap("images/cover.png"))
-            os.remove("images/cover.png")
-        finally:
-            if os.path.exists("images/cover.png"):
-                os.remove("images/cover.png")
-        self.name.setText(self._translate("MainWindow",
-                                          "<html><head/><body><p align=\"center\"><span"
-                                          " style=\" font-size:12pt; color:#d6d6d6;\">"
-                                          f"{current_song.name}</span></p></body></html>"))
-        self.artist.setText(self._translate("MainWindow",
-                                            "<html><head/><body><p align=\"center\"><span"
-                                            " style=\" font-size:12pt; color:#d6d6d6;\">"
-                                            f"{current_song.artist}</span></p></body></html>"))
-        length = current_song.length
-        m = int(length // 60)
-        s = int(length % 60)
-        self.length.setText(f"{m:0>2}:{s:0>2}")
-        c = self.get_count_of_listening(current_song)
-        text = f"Прослушана {c} раз"
-        if c % 10 in (2, 3, 4) and c // 10 != 1:
-            text += 'а'
-        self.date.setText(self._translate("MainWindow",
-                                          "<html><head/><body><p align=\"center\"><span"
-                                          " style=\" font-size:12pt; color:#d6d6d6;\">"
-                                          f"{text}</span></p></body></html>"))
-
-        content = QtMultimedia.QMediaContent(QtCore.QUrl.fromLocalFile(str(current_song)))
-        self.media_player = QtMultimedia.QMediaPlayer()
-        self.media_player.setMedia(content)
-        self.song_slider.setSliderPosition(0)
-
-        if not self.music_is_playing:
-            self.media_player.pause()
-        else:
-            self.media_player.play()
-            self.play_button.setIcon(QtGui.QIcon('images/pause_button.png'))
-            self.play_button.setIconSize(QtCore.QSize(100, 100))
-        self.player = True
-
-        self.media_player.positionChanged.connect(self.mediaplayer_pos_changed)
-        self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
-        self.media_player.mediaStatusChanged.connect(self.mediaplayer_status_changed)
+        self.left_click(current_song)
 
     def list_of_liked_right_click(self):
         item = self.list_of_liked.currentItem()
@@ -454,10 +408,9 @@ class Mp3(QMainWindow, Ui_MainWindow):
             db.commit()
         return c
 
-    def list_of_songs_left_click(self):
-        self.list_of_liked.clearSelection()
-        item = self.list_of_songs.currentItem()
-        current_song: Song = self.list_of_mp3[item.text()]
+    def left_click(self, current_song):
+        if current_song == self.last_listening:
+            return
         self.count_of_listening_song(current_song)
         self.last_listening = current_song
         try:
@@ -505,6 +458,12 @@ class Mp3(QMainWindow, Ui_MainWindow):
         self.media_player.positionChanged.connect(self.mediaplayer_pos_changed)
         self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
         self.media_player.mediaStatusChanged.connect(self.mediaplayer_status_changed)
+
+    def list_of_songs_left_click(self):
+        self.list_of_liked.clearSelection()
+        item = self.list_of_songs.currentItem()
+        current_song: Song = self.list_of_mp3[item.text()]
+        self.left_click(current_song)
 
     def list_of_songs_right_click(self):
         item = self.list_of_songs.currentItem()

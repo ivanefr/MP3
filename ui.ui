@@ -165,7 +165,8 @@ border-color: rgb(252, 252, 252);</string>
        <property name="styleSheet">
         <string notr="true">border-style: solid;
 border-width: 1px;
-border-color: rgb(252, 252, 252);</string>
+border-color: rgb(252, 252, 252);
+border-radius: 50px;</string>
        </property>
        <property name="text">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:12pt; color:#d6d6d6;&quot;&gt;Количество прослушиваний&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -206,7 +207,7 @@ border-color: rgb(252, 252, 252);</string>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(76, 76, 77);
 color: rgb(214, 214, 214);
-border-radius: 30px;</string>
+border-radius: 25px;</string>
     </property>
     <property name="text">
      <string>ЗАГРУЗИТЬ</string>
@@ -245,8 +246,8 @@ border-radius: 30px;</string>
     <property name="styleSheet">
      <string notr="true">border-style: solid;
 border-width: 1px;
-border-color: rgb(252, 252, 252)
-</string>
+border-color: rgb(252, 252, 252);
+border-radius: 10px</string>
     </property>
    </widget>
    <widget class="QLabel" name="label">
@@ -259,7 +260,8 @@ border-color: rgb(252, 252, 252)
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: rgb(76, 76, 77);</string>
+     <string notr="true">background-color: rgb(76, 76, 77);
+border-radius: 50%;</string>
     </property>
     <property name="text">
      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt; color:#d6d6d6;&quot;&gt;&amp;quot;Мне нравится&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
