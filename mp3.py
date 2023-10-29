@@ -1,8 +1,7 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QPushButton, \
-    QMainWindow, QFileDialog, QListWidgetItem, QBoxLayout, \
-    QCheckBox, QLabel, QListWidget, QDialog, QDialogButtonBox, \
-    QVBoxLayout
+from PyQt5.QtWidgets import QApplication, \
+    QMainWindow, QFileDialog, QListWidgetItem, \
+    QLabel, QDialog, QDialogButtonBox, QVBoxLayout
 from PyQt5 import QtGui, QtCore, QtMultimedia
 import eyed3
 from ui import Ui_MainWindow
@@ -59,7 +58,6 @@ class Song:
         audio = eyed3.load(path)
         self.__path = path
         self.__title = audio.tag.title
-        self.__recording_date = audio.tag.recording_date
         self.__artist = audio.tag.artist
         self.__length = MP3(path).info.length
         images = audio.tag.images
@@ -72,10 +70,6 @@ class Song:
     @property
     def length(self):
         return self.__length
-
-    @property
-    def date(self):
-        return self.__recording_date
 
     @property
     def name(self):
@@ -187,11 +181,11 @@ class Mp3(QMainWindow, Ui_MainWindow):
         self.list_of_liked_mp3 = {}
         self.liked_to_del = {}
 
-        self.list_of_songs.itemClicked.connect(self.list_of_songs_click)
-        self.list_of_songs.itemDoubleClicked.connect(self.list_of_songs_double_click)
+        self.list_of_songs.left_click.connect(self.list_of_songs_left_click)
+        self.list_of_songs.right_click.connect(self.list_of_songs_right_click)
 
-        self.list_of_liked.itemClicked.connect(self.list_of_liked_click)
-        self.list_of_liked.itemDoubleClicked.connect(self.list_of_liked_double_click)
+        self.list_of_liked.left_click.connect(self.list_of_liked_left_click)
+        self.list_of_liked.right_click.connect(self.list_of_liked_right_click)
 
         self.list_of_songs.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.list_of_liked.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
@@ -303,13 +297,13 @@ class Mp3(QMainWindow, Ui_MainWindow):
                 if index + 1 >= self.list_of_songs.count():
                     index = -1
                 self.list_of_songs.setCurrentRow(index + 1)
-                self.list_of_songs_click()
+                self.list_of_songs_left_click()
             elif selected_lol:
                 index = self.list_of_liked.currentRow()
                 if index + 1 >= self.list_of_liked.count():
                     index = -1
                 self.list_of_liked.setCurrentRow(index + 1)
-                self.list_of_liked_click()
+                self.list_of_liked_left_click()
 
     def previous_song(self):
         selected_lol = self.list_of_liked.selectedItems()
@@ -321,13 +315,13 @@ class Mp3(QMainWindow, Ui_MainWindow):
                 if index - 1 < 0:
                     index = self.list_of_songs.count()
                 self.list_of_songs.setCurrentRow(index - 1)
-                self.list_of_songs_click()
+                self.list_of_songs_left_click()
             elif selected_lol:
                 index = self.list_of_liked.currentRow()
                 if index - 1 < 0:
                     index = self.list_of_liked.count()
                 self.list_of_liked.setCurrentRow(index - 1)
-                self.list_of_liked_click()
+                self.list_of_liked_left_click()
 
     def slider(self, pos):
         self.media_player.setPosition(pos)
@@ -336,7 +330,7 @@ class Mp3(QMainWindow, Ui_MainWindow):
         s = sec % 60
         self.current_time.setText(f"{m:0>2}:{s:0>2}")
 
-    def list_of_liked_click(self):
+    def list_of_liked_left_click(self):
         self.list_of_songs.clearSelection()
         item = self.list_of_liked.currentItem()
         current_song: Song = self.list_of_liked_mp3[item.text()]
@@ -388,12 +382,13 @@ class Mp3(QMainWindow, Ui_MainWindow):
         self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
         self.media_player.mediaStatusChanged.connect(self.mediaplayer_status_changed)
 
-    def list_of_liked_double_click(self):
+    def list_of_liked_right_click(self):
         item = self.list_of_liked.currentItem()
         current_song: Song = self.list_of_liked_mp3[item.text()]
         dialog = ConfirmDialog(append=False)
         if dialog.exec():
-            self.next_song()
+            if current_song == self.last_listening:
+                self.next_song()
             index = self.list_of_liked.row(item)
             self.liked_to_del[current_song.title].setHidden(True)
             self.list_of_liked.takeItem(index)
@@ -445,10 +440,10 @@ class Mp3(QMainWindow, Ui_MainWindow):
                 SELECT count FROM count_of_listening_music
                 WHERE path = '{song}'
                 """)
-                print(cur.fetchall())
             db.commit()
 
-    def get_count_of_listening(self, song):
+    @staticmethod
+    def get_count_of_listening(song):
         with sqlite3.connect("db.sqlite") as db:
             cur = db.cursor()
             cur.execute(f"""
@@ -459,7 +454,7 @@ class Mp3(QMainWindow, Ui_MainWindow):
             db.commit()
         return c
 
-    def list_of_songs_click(self):
+    def list_of_songs_left_click(self):
         self.list_of_liked.clearSelection()
         item = self.list_of_songs.currentItem()
         current_song: Song = self.list_of_mp3[item.text()]
@@ -511,7 +506,7 @@ class Mp3(QMainWindow, Ui_MainWindow):
         self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
         self.media_player.mediaStatusChanged.connect(self.mediaplayer_status_changed)
 
-    def list_of_songs_double_click(self):
+    def list_of_songs_right_click(self):
         item = self.list_of_songs.currentItem()
         current_song: Song = self.list_of_mp3[item.text()]
         if current_song.title not in self.list_of_liked_mp3:
