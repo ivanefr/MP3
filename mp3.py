@@ -9,6 +9,7 @@ from ui import Ui_MainWindow
 from PyQt5.QtWinExtras import QtWin
 import os
 from mutagen.mp3 import MP3
+import sqlite3
 
 
 class ConfirmDialog(QDialog):
@@ -65,10 +66,8 @@ class Song:
         if not images:
             with open('images/cover_image.png', 'rb') as f:
                 self.__image = f.read()
-                self.have_image = False
         else:
             self.__image = images[0].image_data
-            self.have_image = True
 
     @property
     def length(self):
@@ -94,7 +93,10 @@ class Song:
         return self.__path
 
     def __eq__(self, other):
-        return self.title == other.title
+        try:
+            return self.title == other.title
+        except AttributeError:
+            return False
 
     def __ne__(self, other):
         return not self == other
@@ -197,6 +199,20 @@ class Mp3(QMainWindow, Ui_MainWindow):
         self.setWindowIcon(QtGui.QIcon('images/icon.jpg'))
         self.player = False
 
+        self.last_listening = None
+
+        with sqlite3.connect("db.sqlite") as db:
+            cur = db.cursor()
+            cur.execute("""SELECT path FROM liked_music
+                           ORDER BY -id""")
+            arr = cur.fetchall()
+            for path in arr:
+                song = Song(path[0])
+                item = QListWidgetItem(song.title)
+                self.list_of_liked.addItem(item)
+                self.list_of_liked_mp3.update({song.title: song})
+                self.liked_to_del.update({song.title: item})
+
     def play(self):
         if not self.music_is_playing:
             self.music_is_playing = True
@@ -207,6 +223,7 @@ class Mp3(QMainWindow, Ui_MainWindow):
             self.music_is_playing = False
             self.play_button.setIcon(QtGui.QIcon('images/play_button.png'))
             self.play_button.setIconSize(QtCore.QSize(100, 100))
+            self.music_is_playing = False
             return
         selected_lol = self.list_of_liked.selectedItems()
         selected_los = self.list_of_songs.selectedItems()
@@ -224,15 +241,14 @@ class Mp3(QMainWindow, Ui_MainWindow):
                 self.list_of_liked.setCurrentRow(0)
                 item = self.list_of_liked.currentItem()
                 song: Song = self.list_of_liked_mp3[item.text()]
-            if song.have_image:
-                try:
-                    with open("images/cover.png", mode='wb') as f:
-                        f.write(song.byte_image)
-                    self.cover.setPixmap(QtGui.QPixmap("images/cover.png"))
+            try:
+                with open("images/cover.png", mode='wb') as f:
+                    f.write(song.byte_image)
+                self.cover.setPixmap(QtGui.QPixmap("images/cover.png"))
+                os.remove("images/cover.png")
+            finally:
+                if os.path.exists("images/cover.png"):
                     os.remove("images/cover.png")
-                finally:
-                    if os.path.exists("images/cover.png"):
-                        os.remove("images/cover.png")
         elif selected_los:
             item = self.list_of_songs.currentItem()
             song: Song = self.list_of_mp3[item.text()]
@@ -278,10 +294,40 @@ class Mp3(QMainWindow, Ui_MainWindow):
             self.list_of_songs.addItem(QListWidgetItem(title))
 
     def next_song(self):
-        ...
+        selected_lol = self.list_of_liked.selectedItems()
+        selected_los = self.list_of_songs.selectedItems()
+
+        if selected_lol or selected_los:
+            if selected_los:
+                index = self.list_of_songs.currentRow()
+                if index + 1 >= self.list_of_songs.count():
+                    index = -1
+                self.list_of_songs.setCurrentRow(index + 1)
+                self.list_of_songs_click()
+            elif selected_lol:
+                index = self.list_of_liked.currentRow()
+                if index + 1 >= self.list_of_liked.count():
+                    index = -1
+                self.list_of_liked.setCurrentRow(index + 1)
+                self.list_of_liked_click()
 
     def previous_song(self):
-        ...
+        selected_lol = self.list_of_liked.selectedItems()
+        selected_los = self.list_of_songs.selectedItems()
+
+        if selected_lol or selected_los:
+            if selected_los:
+                index = self.list_of_songs.currentRow()
+                if index - 1 < 0:
+                    index = self.list_of_songs.count()
+                self.list_of_songs.setCurrentRow(index - 1)
+                self.list_of_songs_click()
+            elif selected_lol:
+                index = self.list_of_liked.currentRow()
+                if index - 1 < 0:
+                    index = self.list_of_liked.count()
+                self.list_of_liked.setCurrentRow(index - 1)
+                self.list_of_liked_click()
 
     def slider(self, pos):
         self.media_player.setPosition(pos)
@@ -294,15 +340,16 @@ class Mp3(QMainWindow, Ui_MainWindow):
         self.list_of_songs.clearSelection()
         item = self.list_of_liked.currentItem()
         current_song: Song = self.list_of_liked_mp3[item.text()]
-        if current_song.have_image:
-            try:
-                with open("images/cover.png", mode='wb') as f:
-                    f.write(current_song.byte_image)
-                self.cover.setPixmap(QtGui.QPixmap("images/cover.png"))
+        self.count_of_listening_song(current_song)
+        self.last_listening = current_song
+        try:
+            with open("images/cover.png", mode='wb') as f:
+                f.write(current_song.byte_image)
+            self.cover.setPixmap(QtGui.QPixmap("images/cover.png"))
+            os.remove("images/cover.png")
+        finally:
+            if os.path.exists("images/cover.png"):
                 os.remove("images/cover.png")
-            finally:
-                if os.path.exists("images/cover.png"):
-                    os.remove("images/cover.png")
         self.name.setText(self._translate("MainWindow",
                                           "<html><head/><body><p align=\"center\"><span"
                                           " style=\" font-size:12pt; color:#d6d6d6;\">"
@@ -315,10 +362,10 @@ class Mp3(QMainWindow, Ui_MainWindow):
         m = int(length // 60)
         s = int(length % 60)
         self.length.setText(f"{m:0>2}:{s:0>2}")
-        if current_song.date is None:
-            text = "Дата выпуска неизвестна"
-        else:
-            text = current_song.date
+        c = self.get_count_of_listening(current_song)
+        text = f"Прослушана {c} раз"
+        if c % 10 in (2, 3, 4) and c // 10 != 1:
+            text += 'а'
         self.date.setText(self._translate("MainWindow",
                                           "<html><head/><body><p align=\"center\"><span"
                                           " style=\" font-size:12pt; color:#d6d6d6;\">"
@@ -327,6 +374,7 @@ class Mp3(QMainWindow, Ui_MainWindow):
         content = QtMultimedia.QMediaContent(QtCore.QUrl.fromLocalFile(str(current_song)))
         self.media_player = QtMultimedia.QMediaPlayer()
         self.media_player.setMedia(content)
+        self.song_slider.setSliderPosition(0)
 
         if not self.music_is_playing:
             self.media_player.pause()
@@ -338,29 +386,93 @@ class Mp3(QMainWindow, Ui_MainWindow):
 
         self.media_player.positionChanged.connect(self.mediaplayer_pos_changed)
         self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
+        self.media_player.mediaStatusChanged.connect(self.mediaplayer_status_changed)
 
     def list_of_liked_double_click(self):
         item = self.list_of_liked.currentItem()
         current_song: Song = self.list_of_liked_mp3[item.text()]
         dialog = ConfirmDialog(append=False)
         if dialog.exec():
+            self.next_song()
+            index = self.list_of_liked.row(item)
             self.liked_to_del[current_song.title].setHidden(True)
+            self.list_of_liked.takeItem(index)
             del self.list_of_liked_mp3[current_song.title]
             del self.liked_to_del[current_song.title]
+            with sqlite3.connect("db.sqlite") as db:
+                cur = db.cursor()
+                cur.execute(f"""
+                DELETE FROM liked_music 
+                WHERE path = '{current_song}'
+                """)
+                db.commit()
+            if not self.liked_to_del:
+                self.cover.setPixmap(QtGui.QPixmap("images/cover_image.png"))
+                self.length.setText("00:00")
+                self.current_time.setText("00:00")
+                del self.media_player
+                self.song_slider.setSliderPosition(0)
+                self.play_button.setIcon(QtGui.QIcon('images/play_button.png'))
+                self.play_button.setIconSize(QtCore.QSize(100, 100))
+                self.music_is_playing = False
+                self.player = False
+
+    def count_of_listening_song(self, song: Song):
+        with sqlite3.connect("db.sqlite") as db:
+            cur = db.cursor()
+            if song != self.last_listening:
+                cur.execute(f"""
+                SELECT count FROM count_of_listening_music
+                WHERE path = '{song}'
+                """)
+                if not cur.fetchall():
+                    cur.execute(f"""
+                    INSERT INTO count_of_listening_music (count, path)
+                    VALUES (1, "{song}")
+                    """)
+                else:
+                    cur.execute(f"""
+                    SELECT count FROM count_of_listening_music
+                    WHERE path = '{song}'
+                    """)
+                    c = cur.fetchall()[0][0]
+                    c += 1
+                    cur.execute(f"""
+                    UPDATE count_of_listening_music SET count = {c} WHERE path = '{song}'
+                    """)
+
+                cur.execute(f"""
+                SELECT count FROM count_of_listening_music
+                WHERE path = '{song}'
+                """)
+                print(cur.fetchall())
+            db.commit()
+
+    def get_count_of_listening(self, song):
+        with sqlite3.connect("db.sqlite") as db:
+            cur = db.cursor()
+            cur.execute(f"""
+            SELECT count FROM count_of_listening_music
+            WHERE path = '{song}'
+            """)
+            c = cur.fetchall()[0][0]
+            db.commit()
+        return c
 
     def list_of_songs_click(self):
         self.list_of_liked.clearSelection()
         item = self.list_of_songs.currentItem()
         current_song: Song = self.list_of_mp3[item.text()]
-        if current_song.have_image:
-            try:
-                with open("images/cover.png", mode='wb') as f:
-                    f.write(current_song.byte_image)
-                self.cover.setPixmap(QtGui.QPixmap("images/cover.png"))
+        self.count_of_listening_song(current_song)
+        self.last_listening = current_song
+        try:
+            with open("images/cover.png", mode='wb') as f:
+                f.write(current_song.byte_image)
+            self.cover.setPixmap(QtGui.QPixmap("images/cover.png"))
+            os.remove("images/cover.png")
+        finally:
+            if os.path.exists("images/cover.png"):
                 os.remove("images/cover.png")
-            finally:
-                if os.path.exists("images/cover.png"):
-                    os.remove("images/cover.png")
         self.name.setText(self._translate("MainWindow",
                                           "<html><head/><body><p align=\"center\"><span"
                                           " style=\" font-size:12pt; color:#d6d6d6;\">"
@@ -373,10 +485,11 @@ class Mp3(QMainWindow, Ui_MainWindow):
         m = int(length // 60)
         s = int(length % 60)
         self.length.setText(f"{m:0>2}:{s:0>2}")
-        if current_song.date is None:
-            text = "Дата выпуска неизвестна"
-        else:
-            text = current_song.date
+        c = self.get_count_of_listening(current_song)
+        text = f"Прослушана {c} раз"
+        if c % 10 in (2, 3, 4) and c // 10 != 1:
+            text += 'а'
+
         self.date.setText(self._translate("MainWindow",
                                           "<html><head/><body><p align=\"center\"><span"
                                           " style=\" font-size:12pt; color:#d6d6d6;\">"
@@ -391,10 +504,12 @@ class Mp3(QMainWindow, Ui_MainWindow):
             self.media_player.play()
             self.play_button.setIcon(QtGui.QIcon('images/pause_button.png'))
             self.play_button.setIconSize(QtCore.QSize(100, 100))
+        self.song_slider.setSliderPosition(0)
         self.player = True
 
         self.media_player.positionChanged.connect(self.mediaplayer_pos_changed)
         self.media_player.durationChanged.connect(self.mediaplayer_duration_changed)
+        self.media_player.mediaStatusChanged.connect(self.mediaplayer_status_changed)
 
     def list_of_songs_double_click(self):
         item = self.list_of_songs.currentItem()
@@ -402,16 +517,32 @@ class Mp3(QMainWindow, Ui_MainWindow):
         if current_song.title not in self.list_of_liked_mp3:
             dialog = ConfirmDialog()
             if dialog.exec():
+                with sqlite3.connect("db.sqlite") as db:
+                    cur = db.cursor()
+                    cur.execute(f"""
+                    INSERT INTO liked_music (path)
+                    VALUES ("{current_song}")
+                    """)
+                    db.commit()
+
                 self.list_of_liked_mp3.update({current_song.title: current_song})
                 new_item = QListWidgetItem(current_song.title)
                 self.list_of_liked.insertItem(0, new_item)
                 self.liked_to_del.update({current_song.title: new_item})
+
         else:
             dialog = ConfirmDialog(append=False)
             if dialog.exec():
                 self.liked_to_del[current_song.title].setHidden(True)
                 del self.list_of_liked_mp3[current_song.title]
                 del self.liked_to_del[current_song.title]
+                with sqlite3.connect("db.sqlite") as db:
+                    cur = db.cursor()
+                    cur.execute(f"""
+                    DELETE FROM liked_music 
+                    WHERE path = '{current_song}'
+                    """)
+                    db.commit()
 
 
 def except_hook(cls, exception, traceback):
@@ -419,6 +550,18 @@ def except_hook(cls, exception, traceback):
 
 
 if __name__ == '__main__':
+    with sqlite3.connect("db.sqlite") as database:
+        cursor = database.cursor()
+        cursor.execute("""CREATE TABLE IF NOT EXISTS liked_music (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    path TEXT)
+                  """)
+        cursor.execute("""CREATE TABLE IF NOT EXISTS count_of_listening_music (
+                   count INTEGER,
+                   path TEXT
+                   )
+        """)
+        database.commit()
     eyed3.log.setLevel("ERROR")
     app = QApplication(sys.argv)
     ex = Mp3()

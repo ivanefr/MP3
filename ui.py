@@ -139,7 +139,7 @@ class Ui_MainWindow(object):
         self.current_time.setText(_translate("MainWindow", "00.00"))
         self.name.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Название</span></p></body></html>"))
         self.artist.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Исполнитель</span></p></body></html>"))
-        self.date.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Год выпуска</span></p></body></html>"))
+        self.date.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt; color:#d6d6d6;\">Количество прослушиваний</span></p></body></html>"))
         self.load_button.setText(_translate("MainWindow", "ЗАГРУЗИТЬ"))
         self.length.setText(_translate("MainWindow", "00.00"))
         self.label.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:14pt; color:#d6d6d6;\">&quot;Мне нравится&quot;</span></p></body></html>"))
