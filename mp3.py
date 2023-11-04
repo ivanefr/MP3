@@ -111,7 +111,9 @@ class Mp3(QMainWindow, Ui_MainWindow):
         my_app_id = 'mycompany.myproduct.subproduct.version'
         QtWin.setCurrentProcessExplicitAppUserModelID(my_app_id)
 
-        self.setWindowTitle('MP3-Плеер')
+        with open('db2.txt', encoding='utf-8') as f:
+            title = f.read()
+        self.setWindowTitle(title)
         self.setFixedSize(self.size())
 
         self.play_button.setIcon(QtGui.QIcon('images/play_button.png'))
