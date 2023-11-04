@@ -47,7 +47,7 @@ class ConfirmDialog(QDialog):
             color: green;
             font-weight: bold;
         }
-        QPushButton[text="Cancel"] {
+        QPushButton[text="Отмена"] {
             color: red;
         }
         """)
@@ -229,10 +229,12 @@ class Mp3(QMainWindow, Ui_MainWindow):
                 return
             elif self.list_of_mp3:
                 self.list_of_songs.setCurrentRow(0)
+                self.list_of_songs.left_click.emit()
                 item = self.list_of_songs.currentItem()
                 song: Song = self.list_of_mp3[item.text()]
             else:
                 self.list_of_liked.setCurrentRow(0)
+                self.list_of_liked.left_click.emit()
                 item = self.list_of_liked.currentItem()
                 song: Song = self.list_of_liked_mp3[item.text()]
             try:
@@ -268,6 +270,11 @@ class Mp3(QMainWindow, Ui_MainWindow):
 
     def mediaplayer_duration_changed(self, dur):
         self.song_slider.setMaximum(dur)
+        sec = dur // 1000
+        m = sec // 60
+        s = sec % 60
+        if f"{m:0>2}:{s:0>2}" != self.length.text():
+            self.length.setText(f"{m:0>2}:{s:0>2}")
 
     def mediaplayer_pos_changed(self, pos):
         self.song_slider.setValue(pos)
@@ -517,8 +524,8 @@ if __name__ == '__main__':
         """)
         database.commit()
     eyed3.log.setLevel("ERROR")
+    sys.excepthook = except_hook
     app = QApplication(sys.argv)
     ex = Mp3()
     ex.show()
-    sys.excepthook = except_hook
     sys.exit(app.exec_())
